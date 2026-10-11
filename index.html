@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天吃什麼？午餐轉盤</title>
+<meta name="description" content="選擇困難救星：用轉盤決定今天午餐吃什麼。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍱</text></svg>">
+<style>
+:root {
+  --font: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #FFF7EC;
+  --surface: #FFFFFF;
+  --surface-2: #FFF1DE;
+  --text: #2B2118;
+  --muted: #7C6B5B;
+  --border: #EEDFCA;
+  --primary: #F2552C;
+  --primary-hover: #DE4621;
+  --primary-deep: #B5391A;
+  --on-primary: #FFFFFF;
+  --chip-on: #2B2118;
+  --chip-on-text: #FFF7EC;
+  --danger: #D63B3B;
+  --star: #F5A524;
+  --slice-off: #E6DDD1;
+  --slice-off-text: #A08F7E;
+  --shadow: 0 6px 24px rgba(80, 45, 10, .10);
+  --radius: 18px;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1B1714;
+  --surface: #26201C;
+  --surface-2: #322A24;
+  --text: #F6EEE4;
+  --muted: #B6A694;
+  --border: #40362F;
+  --primary: #FF7A50;
+  --primary-hover: #FF916C;
+  --primary-deep: #C2502C;
+  --on-primary: #1B1714;
+  --chip-on: #F6EEE4;
+  --chip-on-text: #1B1714;
+  --danger: #FF7070;
+  --star: #FFC145;
+  --slice-off: #463C35;
+  --slice-off-text: #8F8174;
+  --shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); line-height: 1.55;
+  transition: background .25s, color .25s;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.app { max-width: 720px; margin: 0 auto; padding: 16px 16px 40px; }
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 16px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo {
+  flex: none; width: 56px; height: 56px; border-radius: 16px;
+  display: grid; place-items: center; font-size: 34px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+h1 { margin: 0; font-size: clamp(22px, 5.5vw, 30px); font-weight: 800; letter-spacing: .02em; }
+.sub { margin: 0; color: var(--muted); font-size: 14px; }
+.top-actions { display: flex; gap: 8px; flex: none; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface);
+  display: grid; place-items: center; font-size: 20px;
+}
+.icon-btn:hover { background: var(--surface-2); }
+
+/* Cards */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px;
+}
+.card + .card { margin-top: 16px; }
+
+/* Wheel */
+.wheel-card { display: flex; flex-direction: column; align-items: center; }
+.wheel-wrap { position: relative; width: min(420px, 100%); aspect-ratio: 1 / 1; margin: 16px auto 0; }
+.wheel-wrap canvas { display: block; width: 100%; height: 100%; }
+.pointer {
+  position: absolute; top: -16px; left: 50%; z-index: 2;
+  width: 40px; height: 54px;
+  transform: translateX(-50%); transform-origin: 50% 22%;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .3));
+}
+.pointer .p-body { fill: var(--text); }
+.pointer .p-dot { fill: var(--primary); }
+.pointer.tick { animation: tick .13s ease-out; }
+@keyframes tick {
+  0% { transform: translateX(-50%) rotate(0); }
+  35% { transform: translateX(-50%) rotate(-18deg); }
+  100% { transform: translateX(-50%) rotate(0); }
+}
+.hub {
+  position: absolute; inset: 0; margin: auto; width: 19%; height: 19%;
+  border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); border: 4px solid var(--primary);
+  font-size: clamp(18px, 5vw, 30px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
+  pointer-events: none;
+}
+
+/* Buttons */
+.btn {
+  font-weight: 700; border-radius: 999px; border: 1px solid transparent;
+  padding: 10px 18px; cursor: pointer;
+  transition: transform .1s, background .2s, opacity .2s, box-shadow .1s;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface-2); }
+.btn-danger { color: var(--danger); }
+.btn-spin {
+  margin-top: 22px; font-size: 21px; padding: 14px 48px; letter-spacing: .08em;
+  box-shadow: 0 5px 0 var(--primary-deep);
+}
+.btn-spin:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--primary-deep); }
+.hint { margin: 12px 0 0; color: var(--muted); font-size: 13px; text-align: center; min-height: 1.5em; }
+.hint.warn { color: var(--danger); font-weight: 600; }
+kbd {
+  font-family: inherit; font-size: 12px; padding: 1px 6px; border-radius: 6px;
+  border: 1px solid var(--border); border-bottom-width: 2px; background: var(--surface-2);
+}
+
+/* Controls */
+.controls { width: 100%; margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); display: grid; gap: 12px; }
+.control-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.control-label { flex: none; width: 36px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  font-size: 14px; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2);
+}
+.chip[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-text); border-color: var(--chip-on); }
+.exclude { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.exclude-note { margin: 0; font-size: 13px; color: var(--muted); }
+select, input[type="text"] {
+  min-width: 0; font-size: 15px; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface-2);
+}
+select { cursor: pointer; }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; padding: 5px; margin-bottom: 16px; border-radius: 14px; background: var(--surface-2); }
+.tabs [role="tab"] {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 6px; white-space: nowrap; border: 0; border-radius: 10px; cursor: pointer;
+  background: transparent; color: var(--muted); font-size: 15px; font-weight: 700;
+}
+.tabs [role="tab"][aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, .1); }
+.badge { font-size: 12px; padding: 0 7px; border-radius: 999px; background: var(--primary); color: var(--on-primary); }
+
+/* Options */
+.add-form { display: grid; grid-template-columns: 1fr 92px 80px auto; gap: 8px; }
+.opt-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; }
+.opt-row {
+  display: grid; grid-template-columns: 1fr 92px 80px auto 36px; gap: 8px; align-items: center;
+  padding: 6px; border-radius: 12px; transition: opacity .2s, background .2s;
+}
+.opt-row:hover { background: var(--surface-2); }
+.opt-row.filtered { opacity: .45; }
+.opt-row .opt-name { font-weight: 700; background: transparent; border-color: transparent; }
+.opt-row .opt-name:hover, .opt-row .opt-name:focus { background: var(--surface); border-color: var(--border); }
+.stars { display: flex; }
+.star { padding: 2px; border: 0; background: none; cursor: pointer; font-size: 21px; line-height: 1; color: var(--border); }
+.star.on { color: var(--star); }
+.del-btn {
+  width: 36px; height: 36px; border: 0; border-radius: 10px; cursor: pointer;
+  background: transparent; color: var(--muted); font-size: 16px;
+}
+.del-btn:hover { background: rgba(214, 59, 59, .12); color: var(--danger); }
+.list-hint { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.panel-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+
+/* History */
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-list li { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px dashed var(--border); }
+.h-name { font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+.h-time { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.empty { padding: 28px 8px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* Stats */
+.stats-total { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.stats-total b { color: var(--text); font-size: 18px; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 88px 1fr 96px; gap: 10px; align-items: center; font-size: 14px; }
+.bar-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 16px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.bar-fill { display: block; height: 100%; border-radius: 999px; transform-origin: left; animation: grow .7s cubic-bezier(.2, .8, .2, 1); }
+@keyframes grow { from { transform: scaleX(0); } }
+.bar-count { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Modal */
+.modal {
+  position: fixed; inset: 0; z-index: 50; padding: 16px;
+  display: grid; place-items: center;
+  background: rgba(25, 15, 5, .5); opacity: 0; transition: opacity .2s;
+}
+.modal[hidden] { display: none; }
+.modal.show { opacity: 1; }
+.modal-card {
+  width: min(360px, 100%); padding: 28px 24px 22px; border-radius: 24px; text-align: center;
+  background: var(--surface); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  transform: scale(.85); transition: transform .28s cubic-bezier(.2, 1.4, .4, 1);
+}
+.modal.show .modal-card { transform: scale(1); }
+.modal-kicker { margin: 0; color: var(--muted); font-size: 15px; }
+.modal-card h2 { margin: 6px 0 4px; font-size: clamp(30px, 9vw, 42px); font-weight: 900; color: var(--primary); word-break: break-all; }
+.modal-meta { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+.modal-actions { display: grid; gap: 10px; }
+.modal-actions .btn { padding: 12px 18px; font-size: 16px; }
+
+/* Toast + confetti */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 70;
+  max-width: calc(100% - 32px); padding: 10px 18px; border-radius: 999px;
+  background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; text-align: center;
+  opacity: 0; transform: translate(-50%, 20px); pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; }
+
+footer { margin-top: 24px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* Narrow screens: single column */
+@media (max-width: 599px) {
+  .card { padding: 16px; }
+  .add-form { grid-template-columns: 1fr 1fr auto; }
+  .add-form input { grid-column: 1 / -1; }
+  .opt-row { grid-template-columns: 1fr 1fr auto 36px; border: 1px solid var(--border); }
+  .opt-row .opt-name { grid-column: 1 / -1; }
+  .bar-row { grid-template-columns: 72px 1fr 82px; }
+  .tabs [role="tab"] { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🍱</div>
+      <div>
+        <h1>今天吃什麼？</h1>
+        <p class="sub">午餐轉盤・選擇困難救星</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="icon-btn" id="muteBtn">🔊</button>
+      <button type="button" class="icon-btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card wheel-card" aria-label="轉盤">
+      <div class="wheel-wrap" id="wheelWrap">
+        <canvas id="wheel" role="img" aria-label="午餐轉盤"></canvas>
+        <svg class="pointer" id="pointer" viewBox="0 0 40 54" aria-hidden="true">
+          <path class="p-body" d="M20 52 L5 14 A16 16 0 1 1 35 14 Z"/>
+          <circle class="p-dot" cx="20" cy="15" r="6"/>
+        </svg>
+        <div class="hub" aria-hidden="true">🍽️</div>
+      </div>
+      <button type="button" class="btn btn-primary btn-spin" id="spinBtn">開始轉！</button>
+      <p class="hint" id="spinHint"></p>
+
+      <div class="controls">
+        <div class="control-row">
+          <span class="control-label" id="typeLabel">類型</span>
+          <div class="chips" id="typeChips" role="group" aria-labelledby="typeLabel"></div>
+        </div>
+        <div class="control-row">
+          <span class="control-label" id="priceLabel">價位</span>
+          <div class="chips" id="priceChips" role="group" aria-labelledby="priceLabel"></div>
+        </div>
+        <div class="control-row">
+          <label class="control-label" for="excludeSel">排除</label>
+          <div class="exclude">
+            <span>最近</span>
+            <select id="excludeSel">
+              <option value="0">0</option><option value="1">1</option>
+              <option value="2">2</option><option value="3">3</option>
+            </select>
+            <span>次吃過的</span>
+          </div>
+        </div>
+        <p class="exclude-note" id="excludeNote"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs" role="tablist" aria-label="功能分頁">
+        <button type="button" role="tab" id="tab-options" data-tab="options" aria-controls="panel-options">選項管理 <span class="badge" id="countBadge"></span></button>
+        <button type="button" role="tab" id="tab-history" data-tab="history" aria-controls="panel-history">歷史紀錄</button>
+        <button type="button" role="tab" id="tab-stats" data-tab="stats" aria-controls="panel-stats">統計圖</button>
+      </div>
+
+      <div class="tab-panel" id="panel-options" data-panel="options" role="tabpanel" aria-labelledby="tab-options">
+        <form class="add-form" id="addForm" autocomplete="off">
+          <input type="text" id="addName" maxlength="12" placeholder="新增選項，例如：炒飯" aria-label="新增選項名稱">
+          <select id="addType" aria-label="新選項類型"></select>
+          <select id="addPrice" aria-label="新選項價位"></select>
+          <button type="submit" class="btn btn-primary" id="addBtn">新增</button>
+        </form>
+        <ul class="opt-list" id="optList"></ul>
+        <p class="list-hint">★ 越多，格子越大、越容易被抽中。半透明的是目前被篩選掉的選項。點名稱可以直接修改。</p>
+        <div class="panel-actions">
+          <button type="button" class="btn btn-ghost" id="shareBtn">🔗 複製分享連結</button>
+          <button type="button" class="btn btn-ghost" id="resetBtn">↺ 還原預設</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-history" data-panel="history" role="tabpanel" aria-labelledby="tab-history" hidden>
+        <ul class="history-list" id="historyList"></ul>
+        <div class="panel-actions">
+          <button type="button" class="btn btn-ghost btn-danger" id="clearHistBtn">清除紀錄</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-stats" data-panel="stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
+        <div id="stats"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>資料只存在你的瀏覽器裡 · Made with vibe coding</footer>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="resultName">
+    <p class="modal-kicker">今天就吃…</p>
+    <h2 id="resultName"></h2>
+    <p class="modal-meta" id="resultMeta"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" id="confirmBtn">就決定是你！</button>
+      <button type="button" class="btn btn-ghost" id="againBtn">再轉一次</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Constants ---------- */
+  const TAU = Math.PI * 2;
+  const MIN_ITEMS = 2, MAX_ITEMS = 20, NAME_MAX = 12, MAX_HISTORY = 200, HISTORY_SHOWN = 10;
+  const STORE_KEY = 'lunchWheel:v1';
+  const TYPES = { rice: '飯', noodle: '麵', fast: '速食', other: '其他' };
+  const TYPE_KEYS = Object.keys(TYPES);
+  const PRICES = [1, 2, 3];
+  const PALETTE = ['#FF8A80', '#FFB74D', '#FFE066', '#A5D86E', '#5FD3B4', '#74C0FC',
+                   '#9FA8FF', '#D7A6F5', '#FF9EC4', '#C9E265', '#66D9E8', '#FFC078'];
+  const SLICE_TEXT = '#2B2118';
+  const FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif';
+  const DEFAULT_ITEMS = [
+    ['滷肉飯', 'rice', 1], ['牛肉麵', 'noodle', 2], ['雞腿便當', 'rice', 1], ['水餃', 'other', 1],
+    ['拉麵', 'noodle', 3], ['咖哩飯', 'rice', 2], ['義大利麵', 'noodle', 2], ['壽司', 'other', 3],
+    ['麥當勞', 'fast', 2], ['早午餐', 'other', 2]
+  ];
+
+  /* ---------- Helpers ---------- */
+  const $ = s => document.querySelector(s);
+  const mod = (a, n) => ((a % n) + n) % n;
+  const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  const priceLabel = p => '$'.repeat(p);
+  const stars = w => '★'.repeat(w) + '☆'.repeat(3 - w);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const el = {
+    wrap: $('#wheelWrap'), wheel: $('#wheel'), pointer: $('#pointer'),
+    spinBtn: $('#spinBtn'), spinHint: $('#spinHint'),
+    typeChips: $('#typeChips'), priceChips: $('#priceChips'),
+    excludeSel: $('#excludeSel'), excludeNote: $('#excludeNote'),
+    countBadge: $('#countBadge'), addForm: $('#addForm'), addName: $('#addName'),
+    addType: $('#addType'), addPrice: $('#addPrice'), addBtn: $('#addBtn'),
+    optList: $('#optList'), shareBtn: $('#shareBtn'), resetBtn: $('#resetBtn'),
+    historyList: $('#historyList'), clearHistBtn: $('#clearHistBtn'), stats: $('#stats'),
+    modal: $('#modal'), resultName: $('#resultName'), resultMeta: $('#resultMeta'),
+    confirmBtn: $('#confirmBtn'), againBtn: $('#againBtn'),
+    toast: $('#toast'), confetti: $('#confetti'),
+    themeBtn: $('#themeBtn'), muteBtn: $('#muteBtn')
+  };
+  const ctx = el.wheel.getContext('2d');
+
+  /* ---------- State & storage (F5) ---------- */
+  const defaultItems = () => DEFAULT_ITEMS.map(([name, type, price]) => ({ id: uid(), name, type, price, weight: 2 }));
+  const defaultState = () => ({
+    items: defaultItems(), filterTypes: [...TYPE_KEYS], filterPrices: [...PRICES],
+    excludeN: 1, history: [], theme: null, muted: false
+  });
+
+  function sanitizeItems(arr) {
+    if (!Array.isArray(arr)) return [];
+    const out = [], seen = new Set();
+    for (const it of arr) {
+      if (!it || typeof it !== 'object') continue;
+      const name = String(it.name ?? '').trim().slice(0, NAME_MAX);
+      if (!name || seen.has(name.toLowerCase())) continue;
+      seen.add(name.toLowerCase());
+      out.push({
+        id: uid(), name,
+        type: TYPE_KEYS.includes(it.type) ? it.type : 'other',
+        price: PRICES.includes(Number(it.price)) ? Number(it.price) : 2,
+        weight: [1, 2, 3].includes(Number(it.weight)) ? Number(it.weight) : 2
+      });
+      if (out.length >= MAX_ITEMS) break;
+    }
+    return out;
+  }
+
+  function load() {
+    const s = defaultState();
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { /* ignore */ }
+    if (!d || typeof d !== 'object') return s;
+    const items = sanitizeItems(d.items);
+    if (items.length >= MIN_ITEMS) s.items = items;
+    if (Array.isArray(d.filterTypes)) s.filterTypes = TYPE_KEYS.filter(k => d.filterTypes.includes(k));
+    if (Array.isArray(d.filterPrices)) s.filterPrices = PRICES.filter(p => d.filterPrices.includes(p));
+    if ([0, 1, 2, 3].includes(d.excludeN)) s.excludeN = d.excludeN;
+    if (Array.isArray(d.history)) {
+      s.history = d.history.filter(h => h && typeof h.name === 'string' && typeof h.t === 'number').slice(0, MAX_HISTORY);
+    }
+    if (d.theme === 'light' || d.theme === 'dark') s.theme = d.theme;
+    s.muted = !!d.muted;
+    return s;
+  }
+
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage full or blocked */ }
+  }
+
+  let state = load();
+  let rot = 0;              // wheel rotation (radians)
+  let spinning = false;
+  let spinSegs = null;      // snapshot of slices during a spin
+  let currentResult = null;
+  let confettiRun = 0;
+
+  /* ---------- Wheel geometry (F1, F6, F7, F8) ---------- */
+  const isVisible = it => state.filterTypes.includes(it.type) && state.filterPrices.includes(it.price);
+  const recentNames = () => new Set(state.history.slice(0, state.excludeN).map(h => h.name));
+
+  function colorFor(i, n) {
+    // avoid first & last slice sharing a color
+    if (n > 1 && i === n - 1 && i % PALETTE.length === 0) return PALETTE[1];
+    return PALETTE[i % PALETTE.length];
+  }
+
+  function computeSegs() {
+    const visible = state.items.filter(isVisible);
+    const recent = recentNames();
+    const ignore = visible.length > 0 && visible.every(it => recent.has(it.name));
+    const total = visible.reduce((s, it) => s + it.weight, 0);
+    let acc = 0;
+    const segs = visible.map((it, i) => {
+      const span = it.weight / total * TAU;
+      const seg = { item: it, start: acc, end: acc + span, excluded: !ignore && recent.has(it.name), color: colorFor(i, visible.length) };
+      acc += span;
+      return seg;
+    });
+    return { segs, ignore };
+  }
+
+  // Which slice is under the top pointer for a given rotation
+  function indexAt(segs, r) {
+    const a = mod(-r, TAU);
+    for (let i = 0; i < segs.length; i++) if (a >= segs[i].start && a < segs[i].end) return i;
+    return segs.length - 1;
+  }
+
+  function fitText(text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    return t + '…';
+  }
+
+  function drawWheel() {
+    const size = el.wrap.clientWidth;
+    if (!size) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const px = Math.round(size * dpr);
+    if (el.wheel.width !== px) { el.wheel.width = px; el.wheel.height = px; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+
+    const cs = getComputedStyle(document.documentElement);
+    const v = name => cs.getPropertyValue(name).trim();
+    const cx = size / 2, cy = size / 2;
+    const ringW = Math.max(10, size * 0.04);
+    const outer = size / 2 - 2;
+    const R = outer - ringW;
+    const segs = spinning ? spinSegs : computeSegs().segs;
+
+    if (!segs.length) {
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fillStyle = v('--surface-2'); ctx.fill();
+      ctx.fillStyle = v('--muted'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `700 ${Math.max(13, R * 0.075)}px ${FONT}`;
+      ctx.fillText('沒有符合條件的選項', cx, cy - R * 0.38);
+    }
+
+    segs.forEach(seg => {
+      const a0 = rot + seg.start - Math.PI / 2;
+      const a1 = rot + seg.end - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, a0, a1);
+      ctx.closePath();
+      ctx.fillStyle = seg.excluded ? v('--slice-off') : seg.color;
+      ctx.fill();
+      if (segs.length > 1) { ctx.lineWidth = 2; ctx.strokeStyle = v('--surface'); ctx.stroke(); }
+
+      const span = seg.end - seg.start;
+      const fs = Math.max(9, Math.min(R * 0.088, span * R * 0.42));
+      const mid = (a0 + a1) / 2;
+      const flip = Math.cos(mid) < 0; // left half: flip so text isn't upside down
+      const edge = R - fs * 0.6;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(flip ? mid + Math.PI : mid);
+      ctx.font = `700 ${fs}px ${FONT}`;
+      ctx.textAlign = flip ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = seg.excluded ? v('--slice-off-text') : SLICE_TEXT;
+      const label = fitText(seg.item.name, R * 0.66 - fs * 0.6);
+      ctx.fillText(label, flip ? -edge : edge, 0);
+      if (seg.excluded) { // strike-through for excluded slices
+        const w = ctx.measureText(label).width;
+        ctx.fillRect(flip ? -edge : edge - w, -1, w, 2);
+      }
+      ctx.restore();
+    });
+
+    // Outer ring with marquee lights
+    ctx.beginPath();
+    ctx.arc(cx, cy, outer - ringW / 2, 0, TAU);
+    ctx.lineWidth = ringW;
+    ctx.strokeStyle = v('--primary');
+    ctx.stroke();
+    const n = 24;
+    const phase = spinning ? Math.floor(performance.now() / 110) % 2 : 0;
+    for (let i = 0; i < n; i++) {
+      const a = i / n * TAU;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * (outer - ringW / 2), cy + Math.sin(a) * (outer - ringW / 2), ringW * 0.2, 0, TAU);
+      ctx.fillStyle = i % 2 === phase ? '#FFF6CC' : 'rgba(255,255,255,.45)';
+      ctx.fill();
+    }
+  }
+
+  /* ---------- Sound (F12) ---------- */
+  let actx = null, lastTickAt = 0;
+  function ensureAudio() {
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+    }
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+  function beep(freq, at, dur, vol, type = 'triangle') {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g).connect(actx.destination);
+    o.start(at); o.stop(at + dur + 0.02);
+  }
+  function tick() {
+    el.pointer.classList.remove('tick');
+    void el.pointer.getBoundingClientRect();
+    el.pointer.classList.add('tick');
+    if (state.muted || !actx) return;
+    const now = actx.currentTime;
+    if (now - lastTickAt < 0.035) return;
+    lastTickAt = now;
+    beep(1500, now, 0.05, 0.18);
+  }
+  function playWin() {
+    if (state.muted || !actx) return;
+    const now = actx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => beep(f, now + i * 0.1, 0.35, 0.2));
+  }
+
+  /* ---------- Spin (F2, F3) ---------- */
+  function spin() {
+    if (spinning || !el.modal.hidden) return;
+    const { segs, ignore } = computeSegs();
+    if (segs.length < MIN_ITEMS) { toast('符合條件的選項不足 2 個，請調整篩選'); return; }
+    ensureAudio();
+    if (ignore) toast('符合條件的選項都被排除了，本次忽略排除設定');
+
+    // Weighted random pick among non-excluded slices
+    const cands = segs.filter(s => !s.excluded);
+    const totalW = cands.reduce((s, c) => s + c.item.weight, 0);
+    let r = Math.random() * totalW, pick = cands[cands.length - 1];
+    for (const c of cands) { r -= c.item.weight; if (r < 0) { pick = c; break; } }
+
+    // Land somewhere inside the picked slice (not on its edge)
+    const span = pick.end - pick.start;
+    const target = pick.start + span * (0.15 + Math.random() * 0.7);
+    const from = rot;
+    const to = from + (5 + Math.floor(Math.random() * 3)) * TAU + mod(-target - from, TAU);
+    const dur = 3800 + Math.random() * 1200;
+
+    spinning = true;
+    spinSegs = segs;
+    renderSpinState();
+    let lastIdx = indexAt(segs, rot);
+    const t0 = performance.now();
+
+    const frame = now => {
+      const p = Math.min(1, (now - t0) / dur);
+      rot = from + (to - from) * easeOutQuart(p);
+      const idx = indexAt(segs, rot);
+      if (idx !== lastIdx) { lastIdx = idx; tick(); }
+      drawWheel();
+      if (p < 1) requestAnimationFrame(frame);
+      else finishSpin();
+    };
+    requestAnimationFrame(frame);
+  }
+
+  function finishSpin() {
+    rot = mod(rot, TAU);
+    const seg = spinSegs[indexAt(spinSegs, rot)]; // result = slice under the pointer
+    spinning = false;
+    spinSegs = null;
+    renderSpinState();
+    drawWheel();
+    playWin();
+    confetti();
+    openModal(seg.item);
+  }
+
+  /* ---------- Result modal (F3) ---------- */
+  function openModal(item) {
+    currentResult = { name: item.name };
+    el.resultName.textContent = item.name;
+    el.resultMeta.textContent = `${TYPES[item.type]} · ${priceLabel(item.price)} · 想吃程度 ${stars(item.weight)}`;
+    el.modal.hidden = false;
+    requestAnimationFrame(() => el.modal.classList.add('show'));
+    el.confirmBtn.focus();
+  }
+  function closeModal() {
+    el.modal.classList.remove('show');
+    el.modal.hidden = true;
+    currentResult = null;
+    el.spinBtn.focus();
+  }
+  el.confirmBtn.addEventListener('click', () => {
+    if (!currentResult) return;
+    const name = currentResult.name;
+    state.history.unshift({ name, t: Date.now() });
+    if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+    save();
+    closeModal();
+    render();
+    toast(`就吃「${name}」！已記錄 🍴`);
+  });
+  el.againBtn.addEventListener('click', () => { closeModal(); setTimeout(spin, 180); });
+  el.modal.addEventListener('click', e => { if (e.target === el.modal) closeModal(); });
+
+  /* ---------- Confetti (F13) ---------- */
+  function confetti() {
+    if (reduceMotion.matches) return;
+    const c = el.confetti, cc = c.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = window.innerWidth, H = window.innerHeight;
+    c.width = W * dpr; c.height = H * dpr;
+    cc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const parts = Array.from({ length: 150 }, () => {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const sp = 7 + Math.random() * 9;
+      return {
+        x: W / 2, y: H * 0.42, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        w: 6 + Math.random() * 6, h: 4 + Math.random() * 5,
+        r: Math.random() * TAU, vr: (Math.random() - 0.5) * 0.35,
+        color: PALETTE[Math.floor(Math.random() * PALETTE.length)]
+      };
+    });
+    const run = ++confettiRun, t0 = performance.now();
+    const step = now => {
+      if (run !== confettiRun) return;
+      const t = now - t0;
+      cc.clearRect(0, 0, W, H);
+      let alive = 0;
+      for (const p of parts) {
+        p.vy += 0.28; p.vx *= 0.985; p.vy *= 0.985;
+        p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        if (p.y < H + 20) alive++;
+        cc.save();
+        cc.translate(p.x, p.y); cc.rotate(p.r);
+        cc.globalAlpha = Math.max(0, 1 - Math.max(0, t - 2200) / 800);
+        cc.fillStyle = p.color;
+        cc.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)) + 1);
+        cc.restore();
+      }
+      if (alive && t < 3000) requestAnimationFrame(step);
+      else cc.clearRect(0, 0, W, H);
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- Toast ---------- */
+  let toastTimer = null;
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2600);
+  }
+
+  /* ---------- Rendering ---------- */
+  const typeOptions = sel => TYPE_KEYS.map(k => `<option value="${k}"${k === sel ? ' selected' : ''}>${TYPES[k]}</option>`).join('');
+  const priceOptions = sel => PRICES.map(p => `<option value="${p}"${p === sel ? ' selected' : ''}>${priceLabel(p)}</option>`).join('');
+
+  function renderFilters() {
+    el.typeChips.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', state.filterTypes.includes(b.dataset.type)));
+    el.priceChips.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', state.filterPrices.includes(Number(b.dataset.price))));
+  }
+
+  function renderExclude() {
+    el.excludeSel.value = String(state.excludeN);
+    let note;
+    if (state.excludeN === 0) note = '目前不排除任何選項';
+    else {
+      const names = [...recentNames()].filter(n => state.items.some(it => it.name === n));
+      if (!names.length) note = '還沒有紀錄，目前沒有被排除的選項';
+      else note = `目前排除：${names.join('、')}` + (computeSegs().ignore ? '（符合條件的都被排除了，轉的時候會暫時忽略）' : '');
+    }
+    el.excludeNote.textContent = note;
+  }
+
+  function renderSpinState() {
+    const enough = computeSegs().segs.length >= MIN_ITEMS;
+    el.spinBtn.disabled = spinning || !enough;
+    el.spinBtn.textContent = spinning ? '轉動中…' : '開始轉！';
+    if (!enough && !spinning) {
+      el.spinHint.classList.add('warn');
+      el.spinHint.textContent = '符合條件的選項不足 2 個，請調整上方篩選';
+    } else {
+      el.spinHint.classList.remove('warn');
+      el.spinHint.innerHTML = '也可以按 <kbd>空白鍵</kbd> 開始';
+    }
+  }
+
+  function renderOptions() {
+    el.optList.innerHTML = state.items.map(it => `
+      <li class="opt-row${isVisible(it) ? '' : ' filtered'}" data-id="${it.id}"${isVisible(it) ? '' : ' title="目前被篩選隱藏"'}>
+        <input type="text" class="opt-name" value="${esc(it.name)}" maxlength="${NAME_MAX}" aria-label="選項名稱">
+        <select class="opt-type" aria-label="類型">${typeOptions(it.type)}</select>
+        <select class="opt-price" aria-label="價位">${priceOptions(it.price)}</select>
+        <div class="stars" role="group" aria-label="想吃程度">${[1, 2, 3].map(w =>
+          `<button type="button" class="star${w <= it.weight ? ' on' : ''}" data-w="${w}" aria-label="想吃程度 ${w} 星" aria-pressed="${w === it.weight}">★</button>`).join('')}</div>
+        <button type="button" class="del-btn" aria-label="刪除 ${esc(it.name)}" title="刪除">✕</button>
+      </li>`).join('');
+    el.countBadge.textContent = `${state.items.length}/${MAX_ITEMS}`;
+    const full = state.items.length >= MAX_ITEMS;
+    el.addBtn.disabled = full;
+    el.addName.disabled = full;
+    el.addName.placeholder = full ? '已達 20 個上限' : '新增選項，例如：炒飯';
+  }
+
+  function fmtTime(t) {
+    const d = new Date(t), pad = n => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()}（${'日一二三四五六'[d.getDay()]}）${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function renderHistory() {
+    const h = state.history;
+    el.clearHistBtn.disabled = !h.length;
+    if (!h.length) {
+      el.historyList.innerHTML = '<li class="empty">還沒有紀錄。轉一次並按「就決定是你！」就會出現在這裡。</li>';
+      return;
+    }
+    el.historyList.innerHTML = h.slice(0, HISTORY_SHOWN).map((x, i) => `
+      <li>
+        <span class="h-name">${esc(x.name)}</span>
+        ${i < state.excludeN ? '<span class="h-tag">排除中</span>' : ''}
+        <span class="h-time">${fmtTime(x.t)}</span>
+      </li>`).join('') +
+      (h.length > HISTORY_SHOWN ? `<li class="empty">只顯示最近 ${HISTORY_SHOWN} 筆（共 ${h.length} 筆）</li>` : '');
+  }
+
+  function renderStats() {
+    const h = state.history;
+    if (!h.length) {
+      el.stats.innerHTML = '<p class="empty">還沒有資料。確認幾次結果後，這裡會畫出你最常吃什麼。</p>';
+      return;
+    }
+    const counts = new Map();
+    h.forEach(x => counts.set(x.name, (counts.get(x.name) || 0) + 1));
+    const rows = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+    const max = rows[0][1];
+    el.stats.innerHTML = `<p class="stats-total">共決定了 <b>${h.length}</b> 次，最常吃：<b>${esc(rows[0][0])}</b></p>
+      <ul class="bars">${rows.map(([name, c], i) => `
+        <li class="bar-row">
+          <span class="bar-name" title="${esc(name)}">${esc(name)}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${c / max * 100}%;background:${PALETTE[i % PALETTE.length]}"></span></span>
+          <span class="bar-count">${c} 次 · ${Math.round(c / h.length * 100)}%</span>
+        </li>`).join('')}</ul>`;
+  }
+
+  function render() {
+    renderFilters();
+    renderOptions();
+    renderHistory();
+    renderStats();
+    renderExclude();
+    renderSpinState();
+    drawWheel();
+  }
+  function refreshWheel() { renderExclude(); renderSpinState(); drawWheel(); }
+
+  /* ---------- Filters & exclusion events (F7, F8) ---------- */
+  el.typeChips.innerHTML = TYPE_KEYS.map(k => `<button type="button" class="chip" data-type="${k}">${TYPES[k]}</button>`).join('');
+  el.priceChips.innerHTML = PRICES.map(p => `<button type="button" class="chip" data-price="${p}">${priceLabel(p)}</button>`).join('');
+  const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+
+  el.typeChips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    state.filterTypes = toggle(state.filterTypes, b.dataset.type);
+    save(); render();
+  });
+  el.priceChips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    state.filterPrices = toggle(state.filterPrices, Number(b.dataset.price));
+    save(); render();
+  });
+  el.excludeSel.addEventListener('change', () => {
+    state.excludeN = Number(el.excludeSel.value);
+    save(); render();
+  });
+
+  /* ---------- Option management (F4, F6) ---------- */
+  el.addType.innerHTML = typeOptions('other');
+  el.addPrice.innerHTML = priceOptions(2);
+  const isDup = (name, except) => state.items.some(x => x !== except && x.name.toLowerCase() === name.toLowerCase());
+
+  el.addForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = el.addName.value.trim();
+    if (!name) { toast('請輸入選項名稱'); el.addName.focus(); return; }
+    if (state.items.length >= MAX_ITEMS) { toast(`最多只能有 ${MAX_ITEMS} 個選項`); return; }
+    if (isDup(name)) { toast(`「${name}」已經在清單裡了`); return; }
+    const it = { id: uid(), name, type: el.addType.value, price: Number(el.addPrice.value), weight: 2 };
+    state.items.push(it);
+    save(); render();
+    el.addName.value = '';
+    if (state.items.length < MAX_ITEMS) el.addName.focus();
+    toast(isVisible(it) ? `已新增「${name}」` : `已新增「${name}」（目前被篩選隱藏）`);
+  });
+
+  const rowItem = row => state.items.find(x => x.id === row.dataset.id);
+
+  el.optList.addEventListener('change', e => {
+    const row = e.target.closest('.opt-row'); if (!row) return;
+    const it = rowItem(row); if (!it) return;
+    const t = e.target;
+    if (t.classList.contains('opt-name')) {
+      const name = t.value.trim();
+      if (!name) { t.value = it.name; toast('名稱不能是空白'); return; }
+      if (isDup(name, it)) { t.value = it.name; toast(`「${name}」已經在清單裡了`); return; }
+      it.name = name; t.value = name;
+      row.querySelector('.del-btn').setAttribute('aria-label', `刪除 ${name}`);
+    } else if (t.classList.contains('opt-type')) {
+      it.type = t.value;
+    } else if (t.classList.contains('opt-price')) {
+      it.price = Number(t.value);
+    } else return;
+    row.classList.toggle('filtered', !isVisible(it));
+    save(); refreshWheel();
+  });
+
+  el.optList.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.classList.contains('opt-name')) e.target.blur();
+  });
+
+  el.optList.addEventListener('click', e => {
+    const row = e.target.closest('.opt-row'); if (!row) return;
+    const it = rowItem(row); if (!it) return;
+    const star = e.target.closest('.star');
+    if (star) {
+      it.weight = Number(star.dataset.w);
+      row.querySelectorAll('.star').forEach(s => {
+        const w = Number(s.dataset.w);
+        s.classList.toggle('on', w <= it.weight);
+        s.setAttribute('aria-pressed', w === it.weight);
+      });
+      save(); refreshWheel();
+      return;
+    }
+    if (e.target.closest('.del-btn')) {
+      if (state.items.length <= MIN_ITEMS) { toast(`至少要保留 ${MIN_ITEMS} 個選項`); return; }
+      state.items = state.items.filter(x => x !== it);
+      save(); render();
+      toast(`已刪除「${it.name}」`);
+    }
+  });
+
+  el.resetBtn.addEventListener('click', () => {
+    if (!confirm('確定要還原成預設選項嗎？目前的清單會被取代。')) return;
+    state.items = defaultItems();
+    save(); render();
+    toast('已還原預設選項');
+  });
+
+  /* ---------- History events (F9) ---------- */
+  el.clearHistBtn.addEventListener('click', () => {
+    if (!confirm('確定要清除所有紀錄嗎？統計圖也會一起清空。')) return;
+    state.history = [];
+    save(); render();
+    toast('紀錄已清除');
+  });
+
+  /* ---------- Share link (F11) ---------- */
+  function encodeList(items) {
+    const bytes = new TextEncoder().encode(JSON.stringify(items.map(it => [it.name, it.type, it.price, it.weight])));
+    let bin = '';
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodeList(code) {
+    let b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const arr = JSON.parse(new TextDecoder().decode(bytes));
+    if (!Array.isArray(arr)) return [];
+    return sanitizeItems(arr.map(a => Array.isArray(a) ? { name: a[0], type: a[1], price: a[2], weight: a[3] } : null));
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall through */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch (e) { return false; }
+  }
+  el.shareBtn.addEventListener('click', async () => {
+    const url = location.href.split('#')[0] + '#list=' + encodeList(state.items);
+    if (await copyText(url)) toast('分享連結已複製，傳給朋友吧！');
+    else window.prompt('複製這個連結分享給朋友：', url);
+  });
+
+  function loadSharedFromHash() {
+    const m = location.hash.match(/^#list=([A-Za-z0-9_-]+)$/);
+    if (!m) return;
+    const clearHash = () => { try { window.history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } };
+    let items = [];
+    try { items = decodeList(m[1]); } catch (e) { items = []; }
+    if (items.length < MIN_ITEMS) { clearHash(); toast('分享連結無效'); return; }
+    if (confirm(`要載入朋友分享的清單嗎？（${items.length} 個選項）\n你目前的清單會被取代。`)) {
+      state.items = items;
+      state.filterTypes = [...TYPE_KEYS];
+      state.filterPrices = [...PRICES];
+      save(); render();
+      toast(`已載入分享清單：${items.length} 個選項`);
+    }
+    clearHash();
+  }
+  window.addEventListener('hashchange', loadSharedFromHash);
+
+  /* ---------- Theme & mute (F12, F14) ---------- */
+  function applyTheme() {
+    const t = state.theme || (prefersDark.matches ? 'dark' : 'light');
+    document.documentElement.dataset.theme = t;
+    const label = t === 'dark' ? '切換為淺色模式' : '切換為深色模式';
+    el.themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
+    el.themeBtn.setAttribute('aria-label', label);
+    el.themeBtn.title = label;
+    drawWheel();
+  }
+  el.themeBtn.addEventListener('click', () => {
+    state.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    save(); applyTheme();
+  });
+  prefersDark.addEventListener?.('change', () => { if (!state.theme) applyTheme(); });
+
+  function renderMute() {
+    el.muteBtn.textContent = state.muted ? '🔇' : '🔊';
+    const label = state.muted ? '開啟音效' : '靜音';
+    el.muteBtn.setAttribute('aria-label', label);
+    el.muteBtn.title = label;
+  }
+  el.muteBtn.addEventListener('click', () => {
+    state.muted = !state.muted;
+    save(); renderMute();
+    toast(state.muted ? '已靜音' : '音效已開啟');
+  });
+
+  /* ---------- Tabs ---------- */
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+  function selectTab(name) {
+    tabs.forEach(t => { const on = t.dataset.tab === name; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; });
+    panels.forEach(p => { p.hidden = p.dataset.panel !== name; });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t.dataset.tab));
+    t.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const next = tabs[mod(i + (e.key === 'ArrowRight' ? 1 : -1), tabs.length)];
+      selectTab(next.dataset.tab); next.focus();
+    });
+  });
+
+  /* ---------- Spin triggers: button + Space key (F2) ---------- */
+  el.spinBtn.addEventListener('click', spin);
+  const isSpace = e => e.code === 'Space' || e.key === ' ';
+  const isTextField = t => t && t.matches && t.matches('input, textarea, select, [contenteditable="true"]');
+  document.addEventListener('keydown', e => {
+    if (!el.modal.hidden) { if (e.key === 'Escape') closeModal(); return; }
+    if (!isSpace(e) || isTextField(e.target)) return;
+    e.preventDefault();
+    if (!e.repeat) spin();
+  });
+  document.addEventListener('keyup', e => {
+    // stop Space from also "clicking" a focused button
+    if (el.modal.hidden && isSpace(e) && !isTextField(e.target)) e.preventDefault();
+  });
+
+  /* ---------- Init ---------- */
+  if ('ResizeObserver' in window) new ResizeObserver(() => drawWheel()).observe(el.wrap);
+  else window.addEventListener('resize', drawWheel);
+
+  applyTheme();
+  renderMute();
+  selectTab('options');
+  render();
+  setTimeout(loadSharedFromHash, 300);
+})();
+</script>
+</body>
+</html>
